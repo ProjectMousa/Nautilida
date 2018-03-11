@@ -25,7 +25,7 @@ currentRow = 0                  #Current Row
 currentColumn = 0               #Current Column
 inCreateShower = False          #In Create Shower or not
 inputShowerLength = "1:00"      #Desired shower length
-inputShowerLengthMinutes = 0    #Desired shower length in minutes
+inputShowerLengthMinutes = 1    #Desired shower length in minutes
 constantTemperature = True      #Constant temperature or not
 currentIndex = 0
 inShowerNameCreator = False
@@ -33,6 +33,8 @@ volumeCutoff = False            #Volume cutoff or not
 volumeAtCutoff = 1              #Desired cutoff volume
 inVariableTemperatureWizard = False
 wizardMinutes = 0
+inLoadShower = False
+inEditShower = False
 
 showerProfile0 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
 showerProfile1 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
@@ -47,6 +49,10 @@ showerProfileName3 = []
 showerProfileName4 = []
 
 showerProfileVariableTemperature0 = []
+showerProfileVariableTemperature1 = []
+showerProfileVariableTemperature2 = []
+showerProfileVariableTemperature3 = []
+showerProfileVariableTemperature4 = []
 
 alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "␣", "'", "✓"]
 
@@ -92,6 +98,16 @@ inputShowerNameLabel = Label()
 volumeCutoffLabel = Label()
 
 temperatureAtTimeLabel = Label()
+
+loadShowerLabel0 = Label()
+
+loadShowerLabel1 = Label()
+
+loadShowerLabel2 = Label()
+
+loadShowerLabel3 = Label()
+
+loadShowerLabel4 = Label()
 
 ### HARDWARE DEFINITIONS ###
 GPIO.setup(11, GPIO.IN, pull_up_down=GPIO.PUD_UP)   #Left Button
@@ -140,6 +156,7 @@ def homePage():
     waterSystemLabel.place_forget()
     createNewShowerButton.place_forget()
     loadShowerButton.place_forget()
+    editShowerButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -154,6 +171,7 @@ def myShowersPage():
     screenLabel.place(x=150, y=90)
     createNewShowerButton.place(x=75, y=150)
     loadShowerButton.place(x=75, y=200)
+    editShowerButton.place(x=75, y=250)
     
     currentModeLabel.place_forget()
     timeLabel.place_forget()
@@ -179,6 +197,16 @@ def myShowersPage():
     inputShowerNameButton.place_forget()
     volumeCutoffLabel.place_forget()
     volumeCutoffButton.place_forget()
+    loadShowerLabel0.place_forget()
+    loadShowerLabel1.place_forget()
+    loadShowerLabel2.place_forget()
+    loadShowerLabel3.place_forget()
+    loadShowerLabel4.place_forget()
+    loadShowerButton0.place_forget()
+    loadShowerButton1.place_forget()
+    loadShowerButton2.place_forget()
+    loadShowerButton3.place_forget()
+    loadShowerButton4.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -208,6 +236,7 @@ def musicPage():
     waterSystemLabel.place_forget()
     createNewShowerButton.place_forget()
     loadShowerButton.place_forget()
+    editShowerButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -281,14 +310,35 @@ def changeScreen():
         helpPage()
     elif(currentScreen == "My Showers" and direction == "Right"):
         if(inCreateShower == False):
-            if(currentRow == 2):
-                musicPage()
-            elif(currentRow == 1):
-                os.system("xte 'mousemove 100 225'")
-                currentRow = 2
-            elif(currentRow == 0):
-                os.system("xte 'mousemove 100 175'")
-                currentRow = 1
+            if(inLoadShower == False):
+                if(currentRow == 3):
+                    musicPage()
+                elif(currentRow == 2):
+                    os.system("xte 'mousemove 100 275'")
+                    currentRow = 3
+                elif(currentRow == 1):
+                    os.system("xte 'mousemove 100 225'")
+                    currentRow = 2
+                elif(currentRow == 0):
+                    os.system("xte 'mousemove 100 175'")
+                    currentRow = 1
+            elif(inLoadShower == True):
+                if(currentRow == 0):
+                    if(showerProfile1["active"] == True):
+                        os.system("xte 'mousemove 100 100'")
+                        currentRow = 1
+                elif(currentRow == 1):
+                    if(showerProfile2["active"] == True):
+                        os.system("xte 'mousemove 100 150'")
+                        currentRow = 2
+                elif(currentRow == 2):
+                    if(showerProfile3["active"] == True):
+                        os.system("xte 'mousemove 100 200'")
+                        currentRow = 3
+                elif(currentRow == 3):
+                    if(showerProfile4["active"] == True):
+                        os.system("xte 'mousemove 100 250'")
+                        currentRow = 4
         elif(inCreateShower == True):
             if(currentRow == 0):
                 if(inShowerNameCreator == False):
@@ -306,17 +356,37 @@ def changeScreen():
             elif(currentRow == 4):
                 os.system("xte 'mousemove 350 400'")
                 currentRow = 5
-            print(currentRow)
     elif(currentScreen == "My Showers" and direction == "Left"):
         if(inCreateShower == False):
-            if(currentRow == 0):
-                homePage()
-            elif(currentRow == 2):
-                os.system("xte 'mousemove 100 175'")
-                currentRow = 1
-            elif(currentRow == 1):
-                os.system("xte 'mousemove 20 20'")
-                currentRow = 0
+            if(inLoadShower == False):
+                if(currentRow == 0):
+                    homePage()
+                elif(currentRow == 3):
+                    os.system("xte 'mousemove 100 225'")
+                    currentRow = 2
+                elif(currentRow == 2):
+                    os.system("xte 'mousemove 100 175'")
+                    currentRow = 1
+                elif(currentRow == 1):
+                    os.system("xte 'mousemove 20 20'")
+                    currentRow = 0
+            elif(inLoadShower == True):
+                if(currentRow == 4):
+                    if(showerProfile3["active"] == True):
+                        os.system("xte 'mousemove 100 200'")
+                        currentRow = 3
+                elif(currentRow == 3):
+                    if(showerProfile2["active"] == True):
+                        os.system("xte 'mousemove 100 150'")
+                        currentRow = 2
+                elif(currentRow == 2):
+                    if(showerProfile1["active"] == True):
+                        os.system("xte 'mousemove 100 100'")
+                        currentRow = 1
+                elif(currentRow == 1):
+                    if(showerProfile0["active"] == True):
+                        os.system("xte 'mousemove 100 50'")
+                        currentRow = 0
         elif(inCreateShower == True):
             if(currentRow == 5):
                 os.system("xte 'mousemove 150 400'")
@@ -333,7 +403,6 @@ def changeScreen():
             elif(currentRow == 1):
                 os.system("xte 'mousemove 100 50'")
                 currentRow = 0
-            print(currentRow)
     elif(currentScreen == "Music" and direction == "Right"):
         settingsPage()
     elif(currentScreen == "Music" and direction == "Left"):
@@ -393,46 +462,45 @@ def changeWaterSystem():
 
 def createNewShower():
     global inCreateShower, inputShowerLength, currentRow
-    inputShowerLengthLabel.config(text = inputShowerLength, font = subFont)
-    constantTemperatureLabel.config(text = "Yes: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
-    inputShowerNameLabel.config(text = "a", font = subFont)
-    volumeCutoffLabel.config(text = "No", font = subFont)
+    if(showerProfile0["active"] == False or showerProfile1["active"] == False or showerProfile2["active"] == False or showerProfile3["active"] == False or showerProfile4["active"] == False):
+        inputShowerLengthLabel.config(text = inputShowerLength, font = subFont)
+        constantTemperatureLabel.config(text = "Yes: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
+        inputShowerNameLabel.config(text = "a", font = subFont)
+        volumeCutoffLabel.config(text = "No", font = subFont)
 
-    createShowerLengthButton.place(x=50, y=100)
-    inputShowerLengthLabel.place(x=300, y=105)
-    constantTemperatureButton.place(x=50, y=150)
-    constantTemperatureLabel.place(x=400, y=155)
-    cancelNewShowerButton.place(x=50, y=400)
-    saveNewShowerButton.place(x=335, y=400)
-    inputShowerNameLabel.place(x=300, y=55)
-    inputShowerNameButton.place(x=50, y=50)
-    volumeCutoffLabel.place(x=300, y=205)
-    volumeCutoffButton.place(x=50, y=200)
+        createShowerLengthButton.place(x=50, y=100)
+        inputShowerLengthLabel.place(x=300, y=105)
+        constantTemperatureButton.place(x=50, y=150)
+        constantTemperatureLabel.place(x=400, y=155)
+        cancelNewShowerButton.place(x=50, y=400)
+        saveNewShowerButton.place(x=335, y=400)
+        inputShowerNameLabel.place(x=300, y=55)
+        inputShowerNameButton.place(x=50, y=50)
+        volumeCutoffLabel.place(x=300, y=205)
+        volumeCutoffButton.place(x=50, y=200)
 
-    homeButton.place_forget()
-    screenLabel.place_forget()
-    createNewShowerButton.place_forget()
-    loadShowerButton.place_forget()
+        homeButton.place_forget()
+        screenLabel.place_forget()
+        createNewShowerButton.place_forget()
+        loadShowerButton.place_forget()
+        editShowerButton.place_forget()
 
-    inCreateShower = True
-    os.system("xte 'mousemove 100 50'")
-    currentRow = 0
+        inCreateShower = True
+        os.system("xte 'mousemove 100 50'")
+        currentRow = 0
 
-    if(showerProfile0["active"] == False):
-        showerProfile0["active"] = True
-        showerProfile0["current"] = True
-    elif(showerProfile1["active"] == False):
-        showerProfile1["active"] = True
-        showerProfile1["current"] = True
-    elif(showerProfile2["active"] == False):
-        showerProfile2["active"] = True
-        showerProfile2["current"] = True
-    elif(showerProfile3["active"] == False):
-        showerProfile3["active"] = True
-        showerProfile3["current"] = True
-    elif(showerProfile4["active"] == False):
-        showerProfile4["active"] = True
-        showerProfile4["current"] = True
+        if(showerProfile0["active"] == False):
+            showerProfile0["current"] = True
+        elif(showerProfile1["active"] == False):
+            showerProfile1["current"] = True
+        elif(showerProfile2["active"] == False):
+            showerProfile2["current"] = True
+        elif(showerProfile3["active"] == False):
+            showerProfile3["current"] = True
+        elif(showerProfile4["active"] == False):
+            showerProfile4["current"] = True
+    else:
+        myShowersPage()
     
 def cancelNewShower():
     global inCreateShower
@@ -455,13 +523,7 @@ def saveNewShower():
             showerProfile0["volumeIfCutoff"] = volumeAtCutoff
         elif(volumeCutoff == False):
             showerProfile0["volumeCutoff"] = False
-        print(showerProfile0["active"])
-        print(showerProfile0["constant"])
-        print(showerProfile0["tempIfConstant"])
-        print(showerProfile0["name"])
-        print(showerProfile0["length"])
-        print(showerProfile0["volumeCutoff"])
-        print(showerProfile0["volumeIfCutoff"])
+        showerProfile0["active"] = True
     elif(showerProfile1["active"] == False):
         if(constantTemperature == True):
             showerProfile1["constant"] = True
@@ -470,6 +532,12 @@ def saveNewShower():
             showerProfile1["constant"] = False
         showerProfile1["name"] = "".join(showerProfileName1)
         showerProfile1["length"] = inputShowerLengthMinutes
+        if(volumeCutoff == True):
+            showerProfile1["volumeCutoff"] = True
+            showerProfile1["volumeIfCutoff"] = volumeAtCutoff
+        elif(volumeCutoff == False):
+            showerProfile1["volumeCutoff"] = False
+        showerProfile1["active"] = True
     elif(showerProfile2["active"] == False):
         if(constantTemperature == True):
             showerProfile2["constant"] = True
@@ -478,6 +546,12 @@ def saveNewShower():
             showerProfile2["constant"] = False
         showerProfile2["name"] = "".join(showerProfileName2)
         showerProfile2["length"] = inputShowerLengthMinutes
+        if(volumeCutoff == True):
+            showerProfile2["volumeCutoff"] = True
+            showerProfile2["volumeIfCutoff"] = volumeAtCutoff
+        elif(volumeCutoff == False):
+            showerProfile2["volumeCutoff"] = False
+        showerProfile2["active"] = True
     elif(showerProfile3["active"] == False):
         if(constantTemperature == True):
             showerProfile3["constant"] = True
@@ -486,6 +560,12 @@ def saveNewShower():
             showerProfile3["constant"] = False
         showerProfile3["name"] = "".join(showerProfileName3)
         showerProfile3["length"] = inputShowerLengthMinutes
+        if(volumeCutoff == True):
+            showerProfile3["volumeCutoff"] = True
+            showerProfile3["volumeIfCutoff"] = volumeAtCutoff
+        elif(volumeCutoff == False):
+            showerProfile3["volumeCutoff"] = False
+        showerProfile3["active"] = True
     elif(showerProfile4["active"] == False):
         if(constantTemperature == True):
             showerProfile4["constant"] = True
@@ -494,8 +574,12 @@ def saveNewShower():
             showerProfile4["constant"] = False
         showerProfile4["name"] = "".join(showerProfileName4)
         showerProfile4["length"] = inputShowerLengthMinutes
-    else:
-        print("All Profiles Taken")
+        if(volumeCutoff == True):
+            showerProfile4["volumeCutoff"] = True
+            showerProfile4["volumeIfCutoff"] = volumeAtCutoff
+        elif(volumeCutoff == False):
+            showerProfile4["volumeCutoff"] = False
+        showerProfile4["active"] = True
     showerProfile0["current"] = False
     showerProfile1["current"] = False
     showerProfile2["current"] = False
@@ -504,42 +588,160 @@ def saveNewShower():
     myShowersPage()
     inCreateShower = False
 
+######################################################################
 def loadShower():
-    print("Load Shower")
+    global inLoadShower, currentRow
+    inLoadShower = True
+    if(showerProfile0["active"] == True):
+        loadShowerButton0.place(x=50, y=50)
+        loadShowerLabel0.config(text = showerProfile0["name"], font = subFont)
+        loadShowerLabel0.place(x=300, y=55)
+    if(showerProfile1["active"] == True):
+        loadShowerButton1.place(x=50, y=100)
+        loadShowerLabel1.config(text = showerProfile1["name"], font = subFont)
+        loadShowerLabel1.place(x=300, y=105)
+    if(showerProfile2["active"] == True):
+        loadShowerButton2.place(x=50, y=150)
+        loadShowerLabel2.config(text = showerProfile2["name"], font = subFont)
+        loadShowerLabel2.place(x=300, y=155)
+    if(showerProfile3["active"] == True):
+        loadShowerButton3.place(x=50, y=200)
+        loadShowerLabel3.config(text = showerProfile3["name"], font = subFont)
+        loadShowerLabel3.place(x=300, y=205)
+    if(showerProfile4["active"] == True):
+        loadShowerButton4.place(x=50, y=250)
+        loadShowerLabel4.config(text = showerProfile4["name"], font = subFont)
+        loadShowerLabel4.place(x=300, y=255)
+
+    os.system("xte 'mousemove 100 50'")
+    currentRow = 0
+    
+    homeButton.place_forget()
+    screenLabel.place_forget()
+    createNewShowerButton.place_forget()
+    loadShowerButton.place_forget()
+    editShowerButton.place_forget()
+
+def loadShower0():
+    global inLoadShower, constantTemperature, wantedTemperature
+    if(showerProfile0["constant"] == True):
+        constantTemperature = True
+        wantedTemperature = showerProfile0["tempIfConstant"]
+    elif(showerProfile0["constant"] == False):
+        constantTemperature = False
+        wantedTemperature = showerProfileVariableTemperature0[0]
+    inLoadShower = False
+    myShowersPage()
+    print("Load Shower 0")
+
+def loadShower1():
+    global inLoadShower, constantTemperature, wantedTemperature
+    if(showerProfile1["constant"] == True):
+        constantTemperature = True
+        wantedTemperature = showerProfile1["tempIfConstant"]
+    elif(showerProfile1["constant"] == False):
+        constantTemperature = False
+        wantedTemperature = showerProfileVariableTemperature1[0]
+    inLoadShower = False
+    myShowersPage()
+    print("Load Shower 1")
+
+def loadShower2():
+    global inLoadShower, constantTemperature, wantedTemperature
+    if(showerProfile2["constant"] == True):
+        constantTemperature = True
+        wantedTemperature = showerProfile2["tempIfConstant"]
+    elif(showerProfile2["constant"] == False):
+        constantTemperature = False
+        wantedTemperature = showerProfileVariableTemperature2[0]
+    inLoadShower = False
+    myShowersPage()
+    print("Load Shower 2")
+
+def loadShower3():
+    global inLoadShower, constantTemperature, wantedTemperature
+    if(showerProfile3["constant"] == True):
+        constantTemperature = True
+        wantedTemperature = showerProfile3["tempIfConstant"]
+    elif(showerProfile3["constant"] == False):
+        constantTemperature = False
+        wantedTemperature = showerProfileVariableTemperature3[0]
+    inLoadShower = False
+    myShowersPage()
+    print("Load Shower 3")
+
+def loadShower4():
+    global inLoadShower, constantTemperature, wantedTemperature
+    if(showerProfile4["constant"] == True):
+        constantTemperature = True
+        wantedTemperature = showerProfile4["tempIfConstant"]
+    elif(showerProfile4["constant"] == False):
+        constantTemperature = False
+        wantedTemperature = showerProfileVariableTemperature4[0]
+    inLoadShower = False
+    myShowersPage()
+    print("Load Shower 4")
+
+def editShower():
+    global inEditShower
+    inEditShower = True
+    print("Edit Shower")
+
+    homeButton.place_forget()
+    screenLabel.place_forget()
+    createNewShowerButton.place_forget()
+    loadShowerButton.place_forget()
+    editShowerButton.place_forget()
 
 def changeConstantTemperature():
-    global constantTemperature, wizardMinutes
+    global constantTemperature, wizardMinutes, showerProfileVariableTemperature0, showerProfileVariableTemperature1, showerProfileVariableTemperature2, showerProfileVariableTemperature3, showerProfileVariableTemperature4
     if(inVariableTemperatureWizard == False):
         if(constantTemperature == True):
             constantTemperature = False
+            if(showerProfile0["current"] == True):
+                showerProfileVariableTemperature0 = []
+            elif(showerProfile1["current"] == True):
+                showerProfileVariableTemperature1 = []
+            elif(showerProfile2["current"] == True):
+                showerProfileVariableTemperature2 = []
+            elif(showerProfile3["current"] == True):
+                showerProfileVariableTemperature3 = []
+            elif(showerProfile4["current"] == True):
+                showerProfileVariableTemperature4 = []
             constantTemperatureLabel.config(text = "No", font = subFont)
             wizardMinutes = 1
             variableTemperatureWizard()
-        ########################################################################################
         elif(constantTemperature == False):
             constantTemperature = True
             constantTemperatureLabel.config(text = "Yes: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
     elif(inVariableTemperatureWizard == True):
         wizardMinutes += 1
         variableTemperatureWizard()
-    print(inVariableTemperatureWizard)
         
 def variableTemperatureWizard():
     global wizardMinutes, inVariableTemperatureWizard
     if(wizardMinutes != (inputShowerLengthMinutes + 1)):
         inVariableTemperatureWizard = True
         if(wizardMinutes == 1):
-            temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minute: " + str(wantedTemperature), font = subFont)
+            temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minute: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
         else:
-            temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minutes: " + str(wantedTemperature), font = subFont)
+            temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minutes: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
             if(showerProfile0["current"] == True):
                 showerProfileVariableTemperature0.append(wantedTemperature)
+            elif(showerProfile1["current"] == True):
+                showerProfileVariableTemperature1.append(wantedTemperature)
+            elif(showerProfile2["current"] == True):
+                showerProfileVariableTemperature2.append(wantedTemperature)
+            elif(showerProfile3["current"] == True):
+                showerProfileVariableTemperature3.append(wantedTemperature)
+            elif(showerProfile4["current"] == True):
+                showerProfileVariableTemperature4.append(wantedTemperature)
         temperatureAtTimeLabel.place(x=50, y=300)
     elif(wizardMinutes == (inputShowerLengthMinutes + 1)):
         showerProfileVariableTemperature0.append(wantedTemperature)
         inVariableTemperatureWizard = False
         temperatureAtTimeLabel.place_forget()
-        print("Wizard Done")
+        print(showerProfileVariableTemperature0)
 
 def inputShowerName():
     if(showerProfile0["current"] == True):
@@ -626,6 +828,19 @@ constantTemperatureButton = Button(win, text = "Constant Temperature:", font = s
 inputShowerNameButton = Button(win, text = "Name:", font = subFont, command = appendShowerName, bg="dim gray", height=1, width=12)
 
 volumeCutoffButton = Button(win, text = "Volume Cutoff:", font = subFont, command=changeVolumeCutoff, bg="dim gray", height=1, width=12)
+
+editShowerButton = Button(win, text = "Edit Shower", font = subFont, command=editShower, bg="dim gray", height=1, width=30)
+
+loadShowerButton0 = Button(win, text = "Load", font = subFont, command=loadShower0, bg="dim gray", height=1, width=10)
+
+loadShowerButton1 = Button(win, text = "Load", font = subFont, command=loadShower1, bg="dim gray", height=1, width=10)
+
+loadShowerButton2 = Button(win, text = "Load", font = subFont, command=loadShower2, bg="dim gray", height=1, width=10)
+
+loadShowerButton3 = Button(win, text = "Load", font = subFont, command=loadShower3, bg="dim gray", height=1, width=10)
+
+loadShowerButton4 = Button(win, text = "Load", font = subFont, command=loadShower4, bg="dim gray", height=1, width=10)
+
 
 ### MAIN CODE ###
 screenLabel = Label()
@@ -747,8 +962,10 @@ def rotaryInput():
                             wantedTemperature = 5
                         elif wantedTemperature > 50:					# limit volume to 0...100
                             wantedTemperature = 50
-                    temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minutes: " + str(wantedTemperature), font = subFont)
-                    ###########################################################
+                    if(wizardMinutes == 1):
+                        temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minute: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
+                    elif(wizardMinutes > 1):
+                        temperatureAtTimeLabel.config(text = "Temperature at " + str(wizardMinutes) + " Minutes: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
                 elif(currentRow == 3 and volumeCutoff == True):
                     volumeAtCutoff += NewCounter
                     if(volumeAtCutoff < 1):
@@ -763,8 +980,8 @@ def rotaryInput():
 os.system("modprobe w1-gpio")
 os.system("modprobe w1-therm")
 base_dir = '/sys/bus/w1/devices/'
-#device_folder = glob.glob(base_dir + '28-0417c1c235ff')[0]
-#device_file = device_folder + '/w1_slave'
+device_folder = glob.glob(base_dir + '28-0417c1c235ff')[0]
+device_file = device_folder + '/w1_slave'
 def read_temp_raw():
     f = open(device_file, 'r')
     lines = f.readlines()
@@ -774,9 +991,6 @@ def read_temp_raw():
 def read_temp():
     global currentTemperature
     lines = read_temp_raw()
-    while lines[0].strip()[-3:] != 'YES':
-        time.sleep(0.2)
-        lines = read_temp_raw()
     equals_pos = lines[1].find('t=')
     if equals_pos != -1:
         temp_string = lines[1][equals_pos+2:]
@@ -792,7 +1006,7 @@ def checkTemperature():
     read_temp()
     if(inCreateShower == False):
         if(currentTemperature < wantedTemperature):
-            heatValve("Hot")
+            heatValve("Hot") #####################Set limits
         elif(currentTemperature > wantedTemperature):
             heatValve("Cold")
     win.after(3000, checkTemperature)
@@ -850,17 +1064,12 @@ time_new = 0.0
 def getWaterFlow():
     global rate_cnt, tot_cnt, minutes, constant, time_new
     if(currentScreen == "Home"):
-        time_new = time.time() + 10
+        time_new = time.time() + .1
         rate_cnt = 0
         while time.time() <= time_new:
             if GPIO.input(16) != 0:
                 rate_cnt += 1
                 tot_cnt += 1
-            try:
-                pass
-                #print(GPIO.input(16), end="")
-            except:
-                pass
         minutes += 1
         print("\nLiters / min ", round(rate_cnt * constant, 4))
         print("Total Liters ", round(tot_cnt * constant, 4))
@@ -870,7 +1079,12 @@ def getWaterFlow():
 def updateClock():
     global currentTime
     if(currentScreen == "Home"):
-        currentHour = datetime.now().hour
+        if(datetime.now().hour <= 12):
+            currentHour = datetime.now().hour
+        elif(datetime.now().hour > 12):
+            currentHour = (datetime.now().hour - 12)
+        if(datetime.now().hour == 0):
+            currentHour = 12
         currentMinute = datetime.now().minute
         if(currentMinute < 10):
             currentTime = "%s:0%s" % (str(currentHour), str(currentMinute))
@@ -884,5 +1098,5 @@ win.after(50, rotaryInput)
 #win.after(100, checkTemperature)
 #win.after(100, updateTemperature)
 win.after(1000, updateClock)
-#win.after(1000, getWaterFlow)
+win.after(1000, getWaterFlow)
 win.mainloop() # Loops forever
