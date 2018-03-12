@@ -13,8 +13,8 @@ currentTemperature = 0          #Current temperature from sensor
 wantedTemperature = 40          #User-specified temperature
 temperatureSystem = "F"         #F or C
 direction = "Right"             #Right or Left
-currentMode = "Automatic"       #Automatic or manual
-wantedTime = "0:00"
+currentProfile = "None"       #Automatic or manual
+wantedTimeInSeconds = 0
 remainingTime = "0:00"          #Time running in seconds
 currentTime = "0:00"            #Current clock time
 currentFlowRate = 0.0           #Current flow in GPM or LPM
@@ -35,6 +35,7 @@ inVariableTemperatureWizard = False
 wizardMinutes = 0
 inLoadShower = False
 inEditShower = False
+showerActive = False            #Shower active or not
 
 showerProfile0 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
 showerProfile1 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
@@ -65,7 +66,7 @@ subFont = tkinter.font.Font(family = "Helvetica", size = 18)
 #win.overrideredirect(True)
 #win.geometry("{0}x{1}+0+0".format(win.winfo_screenwidth(), win.winfo_screenheight()))
 
-currentModeLabel = Label()
+currentProfileLabel = Label()
 
 temperatureLabel = Label()
 
@@ -127,7 +128,7 @@ def homePage():
     currentScreen = "Home"
     screenLabel.config(text = currentScreen, font = mainFont)
     currentTemperatureLabel.config(text = "Current: " + str(currentTemperature) + " °" + temperatureSystem, font = subFont)
-    currentModeLabel.config(text = "Current Mode: " + currentMode, font = subFont)
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
     wantedTemperatureLabel.config(text = "Wanted: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
     temperatureLabel.config(text = "Temperature", font = mainFont)
     timeLabel.config(text = "Time", font = mainFont)
@@ -138,7 +139,7 @@ def homePage():
     totalWaterUsedLabel.config(text = "Total Used: " + str(totalWaterUsed) + " " + waterUsedSystem, font = subFont)
     
     screenLabel.place(x=250, y=0)
-    currentModeLabel.place(x=180, y=60)
+    currentProfileLabel.place(x=200, y=60)
     timeLabel.place(x=260, y=90)
     remainingTimeLabel.place(x=120, y=160)
     clockLabel.place(x=355, y=160)
@@ -148,6 +149,12 @@ def homePage():
     waterFlowLabel.place(x=170, y=325)
     currentFlowRateLabel.place(x=35, y=405)
     totalWaterUsedLabel.place(x=345, y=405)
+    if(showerActive == False):
+        stopShowerButton.place_forget()
+        startShowerButton.place(x=200, y=450)
+    elif(showerActive == True):
+        startShowerButton.place_forget()
+        stopShowerButton.place(x=200, y=450)
     
     homeButton.place_forget()
     changeTemperatureSystemButton.place_forget()
@@ -173,7 +180,7 @@ def myShowersPage():
     loadShowerButton.place(x=75, y=200)
     editShowerButton.place(x=75, y=250)
     
-    currentModeLabel.place_forget()
+    currentProfileLabel.place_forget()
     timeLabel.place_forget()
     remainingTimeLabel.place_forget()
     clockLabel.place_forget()
@@ -207,6 +214,8 @@ def myShowersPage():
     loadShowerButton2.place_forget()
     loadShowerButton3.place_forget()
     loadShowerButton4.place_forget()
+    startShowerButton.place_forget()
+    stopShowerButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -220,7 +229,7 @@ def musicPage():
     homeButton.place(x=10, y=10)
     screenLabel.place(x=250, y=90)
     
-    currentModeLabel.place_forget()
+    currentProfileLabel.place_forget()
     timeLabel.place_forget()
     remainingTimeLabel.place_forget()
     clockLabel.place_forget()
@@ -256,7 +265,7 @@ def settingsPage():
     changeWaterSystemButton.place(x=80, y=270)
     waterSystemLabel.place(x=130, y=330)
     
-    currentModeLabel.place_forget()
+    currentProfileLabel.place_forget()
     timeLabel.place_forget()
     remainingTimeLabel.place_forget()
     clockLabel.place_forget()
@@ -281,7 +290,7 @@ def helpPage():
     homeButton.place(x=10, y=10)
     screenLabel.place(x=270, y=90)
     
-    currentModeLabel.place_forget()
+    currentProfileLabel.place_forget()
     timeLabel.place_forget()
     remainingTimeLabel.place_forget()
     clockLabel.place_forget()
@@ -297,6 +306,8 @@ def helpPage():
     waterSystemLabel.place_forget()
     createNewShowerButton.place_forget()
     loadShowerButton.place_forget()
+    startShowerButton.place_forget()
+    stopShowerButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -508,7 +519,7 @@ def cancelNewShower():
     inCreateShower = False
 
 def saveNewShower():
-    global wantedTemperature, wantedTime, inCreateShower, showerProfile0, showerProfile1, showerProfile2, showerProfile3, showerProfile4
+    global wantedTemperature, inCreateShower, showerProfile0, showerProfile1, showerProfile2, showerProfile3, showerProfile4
     global showerProfileName0, showerProfileName1, showerProfileName2, showerProfileName3, showerProfileName4  
     if(showerProfile0["active"] == False):
         if(constantTemperature == True):
@@ -590,7 +601,7 @@ def saveNewShower():
 
 ######################################################################
 def loadShower():
-    global inLoadShower, currentRow
+    global inLoadShower, currentRow, showerProfile0, showerProfile1, showerProfile2, showerProfile3, showerProfile4
     inLoadShower = True
     if(showerProfile0["active"] == True):
         loadShowerButton0.place(x=50, y=50)
@@ -615,6 +626,12 @@ def loadShower():
 
     os.system("xte 'mousemove 100 50'")
     currentRow = 0
+
+    showerProfile0["current"] = False
+    showerProfile1["current"] = False
+    showerProfile2["current"] = False
+    showerProfile3["current"] = False
+    showerProfile4["current"] = False
     
     homeButton.place_forget()
     screenLabel.place_forget()
@@ -623,61 +640,106 @@ def loadShower():
     editShowerButton.place_forget()
 
 def loadShower0():
-    global inLoadShower, constantTemperature, wantedTemperature
+    global inLoadShower, constantTemperature, wantedTemperature, volumeCutoff, volumeAtCutoff, showerProfile0, wantedTimeInSeconds, currentProfile
     if(showerProfile0["constant"] == True):
         constantTemperature = True
         wantedTemperature = showerProfile0["tempIfConstant"]
     elif(showerProfile0["constant"] == False):
         constantTemperature = False
         wantedTemperature = showerProfileVariableTemperature0[0]
+    if(showerProfile0["volumeCutoff"] == True):
+        volumeCutoff = True
+        volumeAtCutoff = showerProfile0["volumeIfCutoff"]
+    elif(showerProfile0["volumeCutoff"] == False):
+        volumeCutoff = False
+    currentProfile = showerProfile0["name"]
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
+    wantedTimeInSeconds = (showerProfile0["length"] * 60)
+    showerProfile0["current"] = True
     inLoadShower = False
     myShowersPage()
     print("Load Shower 0")
 
 def loadShower1():
-    global inLoadShower, constantTemperature, wantedTemperature
+    global inLoadShower, constantTemperature, wantedTemperature, volumeCutoff, volumeAtCutoff, showerProfile1, wantedTimeInSeconds, currentProfile
     if(showerProfile1["constant"] == True):
         constantTemperature = True
         wantedTemperature = showerProfile1["tempIfConstant"]
     elif(showerProfile1["constant"] == False):
         constantTemperature = False
         wantedTemperature = showerProfileVariableTemperature1[0]
+    if(showerProfile1["volumeCutoff"] == True):
+        volumeCutoff = True
+        volumeAtCutoff = showerProfile1["volumeIfCutoff"]
+    elif(showerProfile1["volumeCutoff"] == False):
+        volumeCutoff = False
+    currentProfile = showerProfile1["name"]
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
+    wantedTimeInSeconds = (showerProfile1["length"] * 60)
+    showerProfile1["current"] = True
     inLoadShower = False
     myShowersPage()
     print("Load Shower 1")
 
 def loadShower2():
-    global inLoadShower, constantTemperature, wantedTemperature
+    global inLoadShower, constantTemperature, wantedTemperature, volumeCutoff, volumeAtCutoff, showerProfile2, wantedTimeInSeconds, currentProfile
     if(showerProfile2["constant"] == True):
         constantTemperature = True
         wantedTemperature = showerProfile2["tempIfConstant"]
     elif(showerProfile2["constant"] == False):
         constantTemperature = False
         wantedTemperature = showerProfileVariableTemperature2[0]
+    if(showerProfile2["volumeCutoff"] == True):
+        volumeCutoff = True
+        volumeAtCutoff = showerProfile2["volumeIfCutoff"]
+    elif(showerProfile2["volumeCutoff"] == False):
+        volumeCutoff = False
+    currentProfile = showerProfile2["name"]
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
+    wantedTimeInSeconds = (showerProfile2["length"] * 60)
+    showerProfile2["current"] = True
     inLoadShower = False
     myShowersPage()
     print("Load Shower 2")
 
 def loadShower3():
-    global inLoadShower, constantTemperature, wantedTemperature
+    global inLoadShower, constantTemperature, wantedTemperature, volumeCutoff, volumeAtCutoff, showerProfile3, wantedTimeInSeconds, currentProfile
     if(showerProfile3["constant"] == True):
         constantTemperature = True
         wantedTemperature = showerProfile3["tempIfConstant"]
     elif(showerProfile3["constant"] == False):
         constantTemperature = False
         wantedTemperature = showerProfileVariableTemperature3[0]
+    if(showerProfile3["volumeCutoff"] == True):
+        volumeCutoff = True
+        volumeAtCutoff = showerProfile3["volumeIfCutoff"]
+    elif(showerProfile3["volumeCutoff"] == False):
+        volumeCutoff = False
+    currentProfile = showerProfile3["name"]
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
+    wantedTimeInSeconds = (showerProfile3["length"] * 60)
+    showerProfile3["current"] = True
     inLoadShower = False
     myShowersPage()
     print("Load Shower 3")
 
 def loadShower4():
-    global inLoadShower, constantTemperature, wantedTemperature
+    global inLoadShower, constantTemperature, wantedTemperature, volumeCutoff, volumeAtCutoff, showerProfile4, wantedTimeInSeconds, currentProfile
     if(showerProfile4["constant"] == True):
         constantTemperature = True
         wantedTemperature = showerProfile4["tempIfConstant"]
     elif(showerProfile4["constant"] == False):
         constantTemperature = False
         wantedTemperature = showerProfileVariableTemperature4[0]
+    if(showerProfile4["volumeCutoff"] == True):
+        volumeCutoff = True
+        volumeAtCutoff = showerProfile4["volumeIfCutoff"]
+    elif(showerProfile4["volumeCutoff"] == False):
+        volumeCutoff = False
+    currentProfile = showerProfile4["name"]
+    currentProfileLabel.config(text = "Current Profile: " + currentProfile, font = subFont)
+    wantedTimeInSeconds = (showerProfile4["length"] * 60)
+    showerProfile4["current"] = True
     inLoadShower = False
     myShowersPage()
     print("Load Shower 4")
@@ -800,6 +862,18 @@ def changeVolumeCutoff():
     elif(volumeCutoff == False):
         volumeCutoff = True
         volumeCutoffLabel.config(text = "Yes: " + str(volumeAtCutoff) + " " + waterUsedSystem, font = subFont)
+########################################################################
+def startShower():
+    global showerActive
+    showerActive = True
+    homePage()
+    print("Start Shower")
+
+def stopShower():
+    global showerActive
+    showerActive = False
+    homePage()
+    print("Stop Shower")
 
 ### WIDGETS ###
 
@@ -841,6 +915,9 @@ loadShowerButton3 = Button(win, text = "Load", font = subFont, command=loadShowe
 
 loadShowerButton4 = Button(win, text = "Load", font = subFont, command=loadShower4, bg="dim gray", height=1, width=10)
 
+startShowerButton = Button(win, text = "Start Shower", font = subFont, command=startShower, bg="dim gray", height=1, width=12)
+
+stopShowerButton = Button(win, text = "Stop Shower", font = subFont, command=stopShower, bg="dim gray", height=1, width=12)
 
 ### MAIN CODE ###
 screenLabel = Label()
@@ -1082,7 +1159,7 @@ def updateClock():
         if(datetime.now().hour <= 12):
             currentHour = datetime.now().hour
         elif(datetime.now().hour > 12):
-            currentHour = (datetime.now().hour - 12)
+            currentHour = (datetime.now().hour - 11)
         if(datetime.now().hour == 0):
             currentHour = 12
         currentMinute = datetime.now().minute
