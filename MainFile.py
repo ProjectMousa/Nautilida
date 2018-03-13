@@ -36,6 +36,7 @@ wizardMinutes = 0
 inLoadShower = False
 inEditShower = False
 showerActive = False            #Shower active or not
+wantedFlowRate = 1.0
 
 showerProfile0 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
 showerProfile1 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
@@ -63,8 +64,8 @@ win.title("Smart Shower")
 win.geometry("480x320")
 mainFont = tkinter.font.Font(family = "Helvetica", size = 35, weight = "bold")
 subFont = tkinter.font.Font(family = "Helvetica", size = 18)
-#win.overrideredirect(True)
-#win.geometry("{0}x{1}+0+0".format(win.winfo_screenwidth(), win.winfo_screenheight()))
+win.overrideredirect(True)
+win.geometry("{0}x{1}+0+0".format(win.winfo_screenwidth(), win.winfo_screenheight()))
 
 currentProfileLabel = Label()
 
@@ -110,6 +111,8 @@ loadShowerLabel3 = Label()
 
 loadShowerLabel4 = Label()
 
+wantedFlowRateLabel = Label()
+
 ### HARDWARE DEFINITIONS ###
 GPIO.setup(11, GPIO.IN, pull_up_down=GPIO.PUD_UP)   #Left Button
 GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_UP)   #Select Button
@@ -147,14 +150,14 @@ def homePage():
     wantedTemperatureLabel.place(x=115, y=275)
     currentTemperatureLabel.place(x=355, y=275)
     waterFlowLabel.place(x=170, y=325)
-    currentFlowRateLabel.place(x=35, y=405)
-    totalWaterUsedLabel.place(x=345, y=405)
+    currentFlowRateLabel.place(x=35, y=395)
+    totalWaterUsedLabel.place(x=345, y=395)
     if(showerActive == False):
         stopShowerButton.place_forget()
-        startShowerButton.place(x=200, y=450)
+        startShowerButton.place(x=200, y=430)
     elif(showerActive == True):
         startShowerButton.place_forget()
-        stopShowerButton.place(x=200, y=450)
+        stopShowerButton.place(x=200, y=430)
     
     homeButton.place_forget()
     changeTemperatureSystemButton.place_forget()
@@ -167,7 +170,7 @@ def homePage():
 
     currentColumn = 0
     currentRow = 0
-    os.system("xte 'mousemove 100 100'")
+    os.system("xte 'mousemove 250 430'")
     
 def myShowersPage():
     global currentScreen, currentColumn, currentRow
@@ -246,6 +249,8 @@ def musicPage():
     createNewShowerButton.place_forget()
     loadShowerButton.place_forget()
     editShowerButton.place_forget()
+    wantedFlowRateLabel.place_forget()
+    wantedFlowRateButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -257,6 +262,7 @@ def settingsPage():
     screenLabel.config(text = currentScreen, font = mainFont)
     temperatureSystemLabel.config(text = "Current Temperature System: °" + temperatureSystem, font = subFont)
     waterSystemLabel.config(text = "Current Water System: " + waterUsedSystem, font = subFont)
+    wantedFlowRateLabel.config(text = str(wantedFlowRate) + " " + flowRateSystem, font = subFont)
 
     homeButton.place(x=10, y=10)
     screenLabel.place(x=210, y=90)
@@ -264,6 +270,8 @@ def settingsPage():
     temperatureSystemLabel.place(x=120, y=220)
     changeWaterSystemButton.place(x=80, y=270)
     waterSystemLabel.place(x=130, y=330)
+    wantedFlowRateButton.place(x=80, y= 380)
+    wantedFlowRateLabel.place(x=250, y=440)
     
     currentProfileLabel.place_forget()
     timeLabel.place_forget()
@@ -308,6 +316,8 @@ def helpPage():
     loadShowerButton.place_forget()
     startShowerButton.place_forget()
     stopShowerButton.place_forget()
+    wantedFlowRateLabel.place_forget()
+    wantedFlowRateButton.place_forget()
 
     currentColumn = 0
     currentRow = 0
@@ -419,7 +429,7 @@ def changeScreen():
     elif(currentScreen == "Music" and direction == "Left"):
         myShowersPage()
     elif(currentScreen == "Settings" and direction == "Right"):
-        if(currentRow == 2):
+        if(currentRow == 3):
             helpPage()
         elif(currentRow == 0):
             os.system("xte 'mousemove 100 175'")
@@ -427,9 +437,15 @@ def changeScreen():
         elif(currentRow == 1):
             os.system("xte 'mousemove 100 275'")
             currentRow = 2
+        elif(currentRow == 2):
+            os.system("xte 'mousemove 100 400'")
+            currentRow = 3
     elif(currentScreen == "Settings" and direction =="Left"):
         if(currentRow == 0):
             musicPage()
+        elif(currentRow == 3):
+            os.system("xte 'mousemove 100 275'")
+            currentRow = 2
         elif(currentRow == 2):
             os.system("xte 'mousemove 100 175'")
             currentRow = 1
@@ -470,6 +486,7 @@ def changeWaterSystem():
         flowRateSystem = "GPM"
         waterUsedSystem = "Gallons"
         waterSystemLabel.config(text = "Current Water System: " + waterUsedSystem, font = subFont)
+    wantedFlowRateLabel.config(text = str(wantedFlowRate) + " " + flowRateSystem, font = subFont)
 
 def createNewShower():
     global inCreateShower, inputShowerLength, currentRow
@@ -867,13 +884,16 @@ def startShower():
     global showerActive
     showerActive = True
     homePage()
+    if(currentProfile == "None"):
+        checkTemperature()
+        checkFlowRate()
     print("Start Shower")
 
 def stopShower():
     global showerActive
     showerActive = False
     homePage()
-    print("Stop Shower")
+    print("Stop Shower")    
 
 ### WIDGETS ###
 
@@ -918,6 +938,8 @@ loadShowerButton4 = Button(win, text = "Load", font = subFont, command=loadShowe
 startShowerButton = Button(win, text = "Start Shower", font = subFont, command=startShower, bg="dim gray", height=1, width=12)
 
 stopShowerButton = Button(win, text = "Stop Shower", font = subFont, command=stopShower, bg="dim gray", height=1, width=12)
+
+wantedFlowRateButton = Button(win, text = "Wanted Flow Rate:", font = subFont, bg="dim gray", height=1, width=30)
 
 ### MAIN CODE ###
 screenLabel = Label()
@@ -976,26 +998,27 @@ GPIO.add_event_detect(Enc_A, GPIO.RISING, callback=rotary_interrupt) 				# NO bo
 GPIO.add_event_detect(Enc_B, GPIO.RISING, callback=rotary_interrupt)
 NewCounter = 0
 def rotaryInput():
-    global wantedTemperature, inputShowerLengthMinutes, inputShowerLength
+    global wantedTemperature, inputShowerLengthMinutes, inputShowerLength, wantedFlowRate
     global Rotary_counter, LockRotary, NewCounter, currentIndex, volumeAtCutoff							# Current Volume
     LockRotary.acquire()					# get lock for rotary switch
     NewCounter = Rotary_counter			# get counter value
     Rotary_counter = 0						# RESET IT TO 0
     LockRotary.release()					# and release lock					
     if (NewCounter !=0):
-        if(currentScreen == "Home"):                # Counter has CHANGED
-            wantedTemperature += NewCounter	# Decrease or increase volume 
-            if(temperatureSystem == "F"):
-                if wantedTemperature < 40:						# limit volume to 0...100
-                    wantedTemperature = 40
-                elif wantedTemperature > 120:					# limit volume to 0...100
-                    wantedTemperature = 120
-            elif(temperatureSystem == "C"):
-                if wantedTemperature < 5:						# limit volume to 0...100
-                    wantedTemperature = 5
-                elif wantedTemperature > 50:					# limit volume to 0...100
-                    wantedTemperature = 50
-            wantedTemperatureLabel.config(text = "Wanted: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
+        if(currentScreen == "Home"):
+            if(currentProfile == "None"):
+                wantedTemperature += NewCounter	# Decrease or increase volume 
+                if(temperatureSystem == "F"):
+                    if wantedTemperature < 40:						# limit volume to 0...100
+                        wantedTemperature = 40
+                    elif wantedTemperature > 120:					# limit volume to 0...100
+                        wantedTemperature = 120
+                elif(temperatureSystem == "C"):
+                    if wantedTemperature < 5:						# limit volume to 0...100
+                        wantedTemperature = 5
+                    elif wantedTemperature > 50:					# limit volume to 0...100
+                        wantedTemperature = 50
+                wantedTemperatureLabel.config(text = "Wanted: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
         elif(currentScreen == "My Showers"):
             if(inCreateShower == True):
                 if(currentRow == 0):
@@ -1050,6 +1073,14 @@ def rotaryInput():
                     elif(volumeAtCutoff > 100):
                         volumeAtCutoff = 100
                     volumeCutoffLabel.config(text = "Yes: " + str(volumeAtCutoff) + " " + waterUsedSystem, font = subFont)
+        elif(currentScreen == "Settings"):
+            if(currentRow == 3):
+                wantedFlowRate += (NewCounter * 0.5)
+                if(wantedFlowRate < 0.5):
+                    wantedFlowRate = 0.5
+                elif(wantedFlowRate > 20.0):
+                    wantedFlowRate = 20.0
+                wantedFlowRateLabel.config(text = str(wantedFlowRate) + " " + flowRateSystem, font = subFont)
     win.after(100, rotaryInput)
 
 ###Temperature Probe###
@@ -1081,12 +1112,13 @@ def read_temp():
 def checkTemperature():
     global currentTemperature
     read_temp()
-    if(inCreateShower == False):
-        if(currentTemperature < wantedTemperature):
-            heatValve("Hot") #####################Set limits
-        elif(currentTemperature > wantedTemperature):
-            heatValve("Cold")
-    win.after(3000, checkTemperature)
+    if(showerActive == True):
+        if(inCreateShower == False):
+            if(currentTemperature < wantedTemperature):
+                heatValve("Hot") #####################Set limits
+            elif(currentTemperature > wantedTemperature):
+                heatValve("Cold")
+        win.after(3000, checkTemperature)
     
 def updateTemperature():
     global currentTemperature
@@ -1172,8 +1204,7 @@ def updateClock():
     
 win.after(100, MainCode)
 win.after(50, rotaryInput)
-#win.after(100, checkTemperature)
-#win.after(100, updateTemperature)
+win.after(100, updateTemperature)
 win.after(1000, updateClock)
 win.after(1000, getWaterFlow)
 win.mainloop() # Loops forever
