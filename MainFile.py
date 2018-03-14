@@ -16,6 +16,7 @@ direction = "Right"             #Right or Left
 currentProfile = "None"       #Automatic or manual
 wantedTimeInSeconds = 0
 remainingTime = "0:00"          #Time running in seconds
+remainingTimeInSeconds = 1
 currentTime = "0:00"            #Current clock time
 currentFlowRate = 0.0           #Current flow in GPM or LPM
 totalWaterUsed = 0.0            #Total water used in Gallons or Liters
@@ -37,6 +38,10 @@ inLoadShower = False
 inEditShower = False
 showerActive = False            #Shower active or not
 wantedFlowRate = 1.0
+currentHeatStep = 0
+currentVolumeStep = 0
+elapsedTime = 0
+currentIndex = 0
 
 showerProfile0 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
 showerProfile1 = {"name" : "Profile0", "active" : False, "current" : False, "length" : 1, "constant" : False, "tempIfConstant" : 0, "volumeCutoff" : False, "volumeIfCutoff" : 0}
@@ -64,8 +69,8 @@ win.title("Smart Shower")
 win.geometry("480x320")
 mainFont = tkinter.font.Font(family = "Helvetica", size = 35, weight = "bold")
 subFont = tkinter.font.Font(family = "Helvetica", size = 18)
-win.overrideredirect(True)
-win.geometry("{0}x{1}+0+0".format(win.winfo_screenwidth(), win.winfo_screenheight()))
+#win.overrideredirect(True)
+#win.geometry("{0}x{1}+0+0".format(win.winfo_screenwidth(), win.winfo_screenheight()))
 
 currentProfileLabel = Label()
 
@@ -879,22 +884,41 @@ def changeVolumeCutoff():
     elif(volumeCutoff == False):
         volumeCutoff = True
         volumeCutoffLabel.config(text = "Yes: " + str(volumeAtCutoff) + " " + waterUsedSystem, font = subFont)
-########################################################################
+
 def startShower():
-    global showerActive
+    global showerActive, constantTemperature, remainingTimeInSeconds
     showerActive = True
     homePage()
+    remainingTimeInSeconds = wantedTimeInSeconds
     if(currentProfile == "None"):
+        constantTemperature = False
         checkTemperature()
         checkFlowRate()
+    elif(constantTemperature == True):
+        checkTemperature()
+        checkFlowRate()
+        updateRemainingTime()
+    else:
+        checkVariableTemperature()
+        checkFlowRate()
+        updateRemainingTime()
     print("Start Shower")
 
 def stopShower():
-    global showerActive
+    global showerActive, constantTemperature, remainingTime, currentIndex
+    currentIndex = 0
     showerActive = False
+    shutOffHeat()
+    shutOffVolume()
+    remainingTime = "0:00"
+    remainingTimeLabel.config(text = "Remaining: " + remainingTime, font = subFont)
     homePage()
+    constantTemperature = True
     print("Stop Shower")    
 
+def checkFlowRate():
+    print("Check Flow Rate")
+  
 ### WIDGETS ###
 
 # Button, triggers the connected command when it is pressed
@@ -1115,52 +1139,163 @@ def checkTemperature():
     if(showerActive == True):
         if(inCreateShower == False):
             if(currentTemperature < wantedTemperature):
-                heatValve("Hot") #####################Set limits
+                heatValve("Hot")
             elif(currentTemperature > wantedTemperature):
                 heatValve("Cold")
         win.after(3000, checkTemperature)
-    
+        print("Checked")
+
+def checkVariableTemperature():
+    global currentTemperature, elapsedTime, currentIndex, wantedTemperature
+    read_temp()
+    if(showerActive == True):
+        if(elapsedTime >= 60):
+            elapsedTime = 0
+            currentIndex += 1
+        if(showerProfile0["current"] == True):
+            if(currentTemperature < showerProfileVariableTemperature0[currentIndex]):
+                heatValve("Hot")
+            elif(currentTemperature > showerProfileVariableTemperature0[currentIndex]):
+                heatValve("Cold")
+            wantedTemperature = showerProfileVariableTemperature0[currentIndex]
+        elif(showerProfile1["current"] == True):
+            if(currentTemperature < showerProfileVariableTemperature1[currentIndex]):
+                heatValve("Hot")
+            elif(currentTemperature > showerProfileVariableTemperature1[currentIndex]):
+                heatValve("Cold")
+            wantedTemperature = showerProfileVariableTemperature1[currentIndex]
+        elif(showerProfile2["current"] == True):
+            if(currentTemperature < showerProfileVariableTemperature2[currentIndex]):
+                heatValve("Hot")
+            elif(currentTemperature > showerProfileVariableTemperature2[currentIndex]):
+                heatValve("Cold")
+            wantedTemperature = showerProfileVariableTemperature2[currentIndex]
+        elif(showerProfile3["current"] == True):
+            if(currentTemperature < showerProfileVariableTemperature3[currentIndex]):
+                heatValve("Hot")
+            elif(currentTemperature > showerProfileVariableTemperature3[currentIndex]):
+                heatValve("Cold")
+            wantedTemperature = showerProfileVariableTemperature3[currentIndex]
+        elif(showerProfile0["current"] == True):
+            if(currentTemperature < showerProfileVariableTemperature4[currentIndex]):
+                heatValve("Hot")
+            elif(currentTemperature > showerProfileVariableTemperature4[currentIndex]):
+                heatValve("Cold")
+            wantedTemperature = showerProfileVariableTemperature4[currentIndex]
+        win.after(3000, checkVariableTemperature)
+        print("Var Check")
+        print(currentIndex)
+            
+###############################################
+
 def updateTemperature():
     global currentTemperature
     if(currentScreen == "Home"):
+        wantedTemperatureLabel.config(text = "Wanted: " + str(wantedTemperature) + " °" + temperatureSystem, font = subFont)
         currentTemperatureLabel.config(text = "Current: " + str(currentTemperature) + " °" + temperatureSystem, font = subFont)
     win.after(100, updateTemperature)
     
 ###Valve Turning###
     
-DIR = 36   # Direction GPIO Pin
-STEP = 35  # Step GPIO Pin
+DIR_H = 32   # Direction GPIO Pin
+DIR_V = 36
+STEP_H = 31  # Step GPIO Pin
+STEP_V = 35
 CW = 1     # Clockwise Rotation
 CCW = 0    # Counterclockwise Rotation
 SPR = 48   # Steps per Revolution (360 / 7.5)
 
-GPIO.setup(DIR, GPIO.OUT)
-GPIO.setup(STEP, GPIO.OUT)
+GPIO.setup(DIR_H, GPIO.OUT)
+GPIO.setup(STEP_H, GPIO.OUT)
+GPIO.setup(DIR_V, GPIO.OUT)
+GPIO.setup(STEP_V, GPIO.OUT)
 
 step_count = SPR
 delay = .001
 
+heatValveMinimum = 0
+heatValveMaximum = 1500
+volumeValveMinimum = 0
+volumeValveMaximum = 160
+
 def heatValve(hotORcold):
-    if(hotORcold == "Hot"):
-        GPIO.output(DIR, CW)
-        for x in range(step_count):
-            GPIO.output(STEP, GPIO.HIGH)
-            time.sleep(delay)
-            GPIO.output(STEP, GPIO.LOW)
-            time.sleep(delay)
-    elif(hotORcold == "Cold"):
-        GPIO.output(DIR, CCW)
-        for x in range(step_count):
-            GPIO.output(STEP, GPIO.HIGH)
-            time.sleep(delay)
-            GPIO.output(STEP, GPIO.LOW)
-            time.sleep(delay)
+    print(hotORcold)
+    global step_count, currentHeatStep, currentVolumeStep
+    valveDirection = "CW"
+    if((currentTemperature - wantedTemperature) > 0):
+        valveDirection = "CCW"
+    elif((currentTemperature - wantedTemperature) < 0):
+        valveDirection = "CW"
+    difference = abs(currentTemperature - wantedTemperature)
+    if(difference > 10):
+        step_count = 100
+    elif(difference <= 10):
+        step_count = 50
+    if((currentHeatStep + step_count) >= heatValveMinimum and (currentHeatStep + step_count) <= heatValveMaximum and valveDirection == "CW"):
+        if(hotORcold == "Hot"):
+            GPIO.output(DIR_H, CCW)
+            for x in range(step_count):
+                GPIO.output(STEP_H, GPIO.HIGH)
+                time.sleep(delay)
+                GPIO.output(STEP_H, GPIO.LOW)
+                time.sleep(delay)
+                currentHeatStep += 1
+    elif((currentHeatStep - step_count) >= heatValveMinimum and (currentHeatStep - step_count) <= heatValveMaximum and valveDirection == "CCW"):
+        if(hotORcold == "Cold"):
+            GPIO.output(DIR_H, CW)
+            for x in range(step_count):
+                GPIO.output(STEP_H, GPIO.HIGH)
+                time.sleep(delay)
+                GPIO.output(STEP_H, GPIO.LOW)
+                time.sleep(delay)
+                currentHeatStep -= 1
+    print(currentHeatStep)
+
+def shutOffHeat():
+    global currentHeatStep
+    GPIO.output(DIR_H, CW)
+    for x in range((currentHeatStep) + 200):
+        GPIO.output(STEP_H, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP_H, GPIO.LOW)
+        time.sleep(delay)
+    currentHeatStep = 0
+
+def shutOffVolume():
+    global currentVolumeStep
+    GPIO.output(DIR_V, CCW)
+    for x in range((currentVolumeStep) + 200):
+        GPIO.output(STEP_V, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP_V, GPIO.LOW)
+        time.sleep(delay)
+    currentVolumeStep = 0
 
 def volumeValve(higherORlower):
-    if(higherORlower == "Higher"):
-        print("Higher volume")
-    elif(higherORlower == "Lower"):
-        print("Lower volume")
+    global step_count, currentHeatStep, currentVolumeStep
+    if(currentVolumeStep >= volumeValveMinimum and currentVolumeStep <= volumeValveMaximum):
+        difference = abs(currentFlowRate - wantedFlowRate)
+        if(difference > 1.5):
+            step_count = 40
+        elif(difference <= 1.5):
+            step_count = 10
+        if(higherORlower == "Higher"):
+            GPIO.output(DIR_V, CW)
+            for x in range(step_count):
+                GPIO.output(STEP_V, GPIO.HIGH)
+                time.sleep(delay)
+                GPIO.output(STEP_V, GPIO.LOW)
+                time.sleep(delay)
+                currentVolumeStep += 1
+        elif(higherORlower == "Lower"):
+            GPIO.output(DIR_V, CCW)
+            for x in range(step_count):
+                GPIO.output(STEP_V, GPIO.HIGH)
+                time.sleep(delay)
+                GPIO.output(STEP_V, GPIO.LOW)
+                time.sleep(delay)
+                currentHeatStep += 1
+
         
 ###Flow Meter###
         
@@ -1202,9 +1337,29 @@ def updateClock():
         clockLabel.config(text = "Clock: " + currentTime, font = subFont)
     win.after(5000, updateClock)
     
+def updateRemainingTime():
+    global remainingTimeInSeconds, remainingTime, showerActive, elapsedTime
+    if(currentProfile != "None"):
+        if(showerActive == True):
+            if((remainingTimeInSeconds % 60) != 0):
+                if((remainingTimeInSeconds % 60) >= 10):
+                    remainingTime = "%s:%s" % (str(int(((remainingTimeInSeconds - (remainingTimeInSeconds % 60)) / 60))), str((remainingTimeInSeconds % 60)))
+                else:
+                    remainingTime = "%s:0%s" % (str(int(((remainingTimeInSeconds - (remainingTimeInSeconds % 60)) / 60))), str((remainingTimeInSeconds % 60)))
+            else:
+                remainingTime = "%s:0%s" % (str(int(((remainingTimeInSeconds - (remainingTimeInSeconds % 60)) / 60))), str((remainingTimeInSeconds % 60)))
+            remainingTimeLabel.config(text = "Remaining: " + remainingTime, font = subFont)
+            remainingTimeInSeconds -= 1
+            elapsedTime += 1
+        if(remainingTimeInSeconds <= 0):
+            stopShower()
+        if(showerActive == True):
+            win.after(1000, updateRemainingTime)
+#####################################################################################
 win.after(100, MainCode)
 win.after(50, rotaryInput)
 win.after(100, updateTemperature)
 win.after(1000, updateClock)
-win.after(1000, getWaterFlow)
+#win.after(1000, getWaterFlow)
 win.mainloop() # Loops forever
+
